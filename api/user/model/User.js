@@ -1,28 +1,33 @@
 const mongoose = require("mongoose")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
-const userSchema = mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "Please Include your name"]
-  },
-  email: {
-    type: String,
-    required: [true, "Please Include your email"]
-  },
-  password: {
-    type: String,
-    required: [true, "Please Include your password"]
-  },
-  tokens: [
-    {
-      token: {
-        type: String,
-        required: true
+const userSchema = mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Please Include your name"]
+    },
+    email: {
+      type: String,
+      required: [true, "Please Include your email"]
+    },
+    password: {
+      type: String,
+      required: [true, "Please Include your password"]
+    },
+    tokens: [
+      {
+        token: {
+          type: String,
+          required: true
+        }
       }
-    }
-  ]
-})
+    ]
+  },
+  {
+    timestamps: true
+  }
+)
 
 userSchema.pre("save", async function (next) {
   // Hash the password before saving the user model
@@ -48,7 +53,7 @@ userSchema.methods.generateAuthToken = async function () {
 //this method search for a user by email and password.
 userSchema.statics.findByCredentials = async (email, password) => {
   const user = await User.findOne({ email })
-  console.log(user)
+
   if (!user) {
     //throw new Error({ error: "Invalid login details" })
     return null

@@ -20,9 +20,6 @@ exports.getMyBoards = async (req, res) => {
   try {
     const boards = await Boards.find({ ownerUID: req.query.boardUID })
 
-    console.log(req.query.boardUID)
-    console.log(boards)
-
     res.status(201).json(boards)
   } catch (err) {
     res.status(400).json({ err: err })
@@ -32,6 +29,10 @@ exports.getMyBoards = async (req, res) => {
 exports.getSharedBoards = async (req, res) => {
   try {
     const boards = await Boards.find({ users: req.query.email })
+
+    if (boards.users.includes(req.query.email)) {
+      boards = []
+    }
 
     res.status(201).json(boards)
   } catch (err) {
@@ -55,8 +56,6 @@ exports.inviteUserToBoard = async (req, res) => {
       { _id: req.body.boardUID },
       { $addToSet: { users: req.body.userEmail } }
     )
-
-    console.log("board: ", board)
 
     res.status(201).json(board)
   } catch (err) {

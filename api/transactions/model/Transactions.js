@@ -1,10 +1,40 @@
 const mongoose = require("mongoose")
-const transactionsSchema = mongoose.Schema({
-  test: {
-    type: String,
-    required: [true, "Please Include your title"]
+
+const transactionsSchema = mongoose.Schema(
+  {
+    boardUID: {
+      type: String,
+      required: [true]
+    },
+    name: {
+      type: String,
+      required: [true]
+    },
+    amount: {
+      type: Number,
+      required: [true]
+    },
+    fromUser: {
+      type: String,
+      required: [false]
+    },
+    fromUsers: {
+      type: Array,
+      required: [false]
+    },
+    transType: {
+      type: String,
+      required: [false]
+    },
+    expenseType: {
+      type: String,
+      required: [false]
+    }
+  },
+  {
+    timestamps: true
   }
-})
+)
 
 const Transactions = mongoose.model("Transactions", transactionsSchema)
 module.exports = Transactions
