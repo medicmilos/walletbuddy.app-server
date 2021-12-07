@@ -8,5 +8,6 @@ router.post("/createNewBoard", auth, boardsController.createNewBoard)
 router.get("/getBoard", boardsController.getBoard)
 router.post("/inviteUserToBoard", boardsController.inviteUserToBoard)
 router.get("/getSharedBoards", boardsController.getSharedBoards)
+router.get("/getUsersOnBoard", boardsController.getUsersOnBoard)
 
 module.exports = router
