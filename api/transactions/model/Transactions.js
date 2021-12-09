@@ -22,11 +22,19 @@ const transactionsSchema = mongoose.Schema(
       type: Array,
       required: [false]
     },
+    incomeToUser: {
+      type: String,
+      required: [false]
+    },
     transType: {
       type: String,
       required: [false]
     },
     expenseType: {
+      type: String,
+      required: [false]
+    },
+    incomeType: {
       type: String,
       required: [false]
     }

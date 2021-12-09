@@ -9,5 +9,6 @@ router.get("/getBoard", boardsController.getBoard)
 router.post("/inviteUserToBoard", boardsController.inviteUserToBoard)
 router.get("/getSharedBoards", boardsController.getSharedBoards)
 router.get("/getUsersOnBoard", boardsController.getUsersOnBoard)
+router.post("/sendEmailReminder", boardsController.sendEmailReminder)
 
 module.exports = router

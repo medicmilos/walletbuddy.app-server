@@ -9,15 +9,27 @@ exports.makeTransaction = async (req, res) => {
       amount: req.body.amount,
       fromUser: req.body.fromUser,
       fromUsers: req.body.fromUsers,
+      incomeToUser: req.body.incomeToUser,
       transType: req.body.transType,
-      expenseType: req.body.expenseType
+      expenseType: req.body.expenseType,
+      incomeType: req.body.incomeType
     })
     const data = await trans.save()
 
-    await Boards.updateOne(
-      { _id: req.body.boardUID },
-      { $inc: { ballance: -req.body.amount } }
-    )
+    if (req.body.transType == "Expense") {
+      await Boards.updateOne(
+        { _id: req.body.boardUID },
+        { $inc: { ballance: -req.body.amount } }
+      )
+    } else if (req.body.transType == "Income") {
+      if (req.body.incomeType == "Single") {
+        await Boards.updateOne(
+          { _id: req.body.boardUID },
+          { $inc: { ballance: req.body.amount } }
+        )
+      } else if (req.body.incomeType == "Custom") {
+      }
+    }
 
     res.status(201).json({ data })
   } catch (err) {
@@ -39,7 +51,7 @@ exports.getBoardTransactions = async (req, res) => {
 
 exports.getUserBallance = async (req, res) => {
   try {
-    const transactions = await Transactions.find({
+    const transactionsFrom = await Transactions.find({
       $and: [
         {
           $or: [
@@ -54,15 +66,36 @@ exports.getUserBallance = async (req, res) => {
 
     let ballance = 0
 
-    transactions.forEach(trans => {
-      if (trans.expenseType == "Custom split") {
-        ballance -= trans.fromUsers.filter(item => {
-          return item.user == req.query.userEmail
-        })[0].amount
-      } else if (trans.expenseType == "Split all") {
-        ballance -= trans.amount / trans.fromUsers.length
-      } else if (trans.expenseType == "Single") {
-        ballance -= trans.amount
+    transactionsFrom.forEach(trans => {
+      if (trans.transactionType == "Expense") {
+        if (trans.expenseType == "Custom split") {
+          ballance -= trans.fromUsers.filter(item => {
+            return item.user == req.query.userEmail
+          })[0].amount
+        } else if (trans.expenseType == "Split all") {
+          ballance -= trans.amount / trans.fromUsers.length
+        } else if (trans.expenseType == "Single") {
+          ballance -= trans.amount
+        }
+      } else if (trans.transactionType == "Income") {
+        if (trans.incomeType == "Custom") {
+          ballance -= trans.amount
+        }
+      }
+    })
+
+    const transactionsTo = await Transactions.find({
+      $and: [
+        {
+          $or: [{ incomeToUser: req.query.userEmail }]
+        },
+        { boardUID: req.query.boardUID }
+      ]
+    })
+
+    transactionsTo.forEach(trans => {
+      if (trans.incomeType == "Single") {
+        ballance += trans.amount
       }
     })
 

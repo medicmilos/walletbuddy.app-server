@@ -1,5 +1,6 @@
 const Boards = require("../model/Boards")
 const Transactions = require("../../transactions/model/Transactions")
+const mailer = require("../../mailer")
 
 exports.createNewBoard = async (req, res) => {
   try {
@@ -31,17 +32,11 @@ exports.getSharedBoards = async (req, res) => {
   try {
     let boards = await Boards.find({ users: req.query.email })
 
-    console.log("1: ", boards)
-
     boards.forEach(board => {
       if (board.users.includes(req.query.email)) {
         boards = []
-
-        console.log("2: ", boards)
       }
     })
-
-    console.log("3: ", boards)
 
     res.status(201).json(boards)
   } catch (err) {
@@ -101,31 +96,56 @@ exports.getUsersOnBoard = async (req, res) => {
             }
           }
         }
+        if (trans.fromUser == null && trans.incomeToUser !== null) {
+          if (trans.incomeToUser == user) {
+            transactionsByUser.push({ user: user, transaction: trans })
+          }
+        }
       })
     })
 
     let ballanceByUser = []
 
     transactionsByUser.forEach(trans => {
-      if (trans.transaction.expenseType == "Custom split") {
-        let amount = -trans.transaction.fromUsers.filter(item => {
-          return item.user == trans.user
-        })[0].amount
+      if (trans.transaction.transType == "Expense") {
+        if (trans.transaction.expenseType == "Custom split") {
+          let amount = -trans.transaction.fromUsers.filter(item => {
+            return item.user == trans.user
+          })[0].amount
 
-        ballanceByUser.push({ user: trans.user, amount: amount })
-      } else if (trans.transaction.expenseType == "Split all") {
-        let amount =
-          -trans.transaction.amount / trans.transaction.fromUsers.length
+          ballanceByUser.push({ user: trans.user, amount: amount })
+        } else if (trans.transaction.expenseType == "Split all") {
+          let amount =
+            -trans.transaction.amount / trans.transaction.fromUsers.length
 
-        ballanceByUser.push({ user: trans.user, amount: amount })
-      } else if (trans.transaction.expenseType == "Single") {
-        let amount = -trans.transaction.amount
+          ballanceByUser.push({ user: trans.user, amount: amount })
+        } else if (trans.transaction.expenseType == "Single") {
+          let amount = -trans.transaction.amount
 
-        ballanceByUser.push({ user: trans.user, amount: amount })
+          ballanceByUser.push({ user: trans.user, amount: amount })
+        }
+      }
+
+      if (trans.transaction.transType == "Income") {
+        if (trans.transaction.incomeType == "Single") {
+          let amount = trans.transaction.amount
+
+          ballanceByUser.push({
+            user: trans.transaction.incomeToUser,
+            amount: amount
+          })
+        } else if (trans.transaction.incomeType == "Custom") {
+          ballanceByUser.push({
+            user: trans.transaction.incomeToUser,
+            amount: trans.transaction.amount
+          })
+          ballanceByUser.push({
+            user: trans.transaction.fromUser,
+            amount: -trans.transaction.amount
+          })
+        }
       }
     })
-
-    console.log("ballanceByUser: ", ballanceByUser)
 
     var result = []
     ballanceByUser.reduce(function (res, value) {
@@ -137,9 +157,35 @@ exports.getUsersOnBoard = async (req, res) => {
       return res
     }, {})
 
-    console.log("result: ", result)
-
     res.status(201).json(result)
+  } catch (err) {
+    res.status(400).json({ err: err })
+  }
+}
+
+exports.sendEmailReminder = async (req, res) => {
+  try {
+    const board = await Boards.find({ _id: req.body.boardUID })
+
+    await mailer.sendMail(
+      req.body.userEmail,
+      "Board reminder",
+      "<p style='font-size:16px;'>Your ballance on board '" +
+        board[0].title +
+        "' is: " +
+        req.body.ballance +
+        "</p>" +
+        "<br><br>" +
+        "<p style='font-size:16px;'>Board message: " +
+        req.body.message +
+        "</p>" +
+        "<br><br><br><br>" +
+        "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as reminder.</p>" +
+        "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
+        "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"
+    )
+
+    res.status(201).json(true)
   } catch (err) {
     res.status(400).json({ err: err })
   }
