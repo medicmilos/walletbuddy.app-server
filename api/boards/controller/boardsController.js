@@ -61,6 +61,25 @@ exports.inviteUserToBoard = async (req, res) => {
       { $addToSet: { users: req.body.userEmail } }
     )
 
+    await mailer.sendMail(
+      req.body.userEmail,
+      "WalletBuddy invitation",
+      "<p style='font-size:16px;'>Your have been invited to join the board '" +
+        board[0].title +
+        "</p>" +
+        "<br><br>" +
+        "' is: " +
+        req.body.ballance +
+        +"<br><br>" +
+        "<p style='font-size:16px;'>Board message: " +
+        req.body.message +
+        "</p>" +
+        "<br><br><br><br>" +
+        "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as reminder.</p>" +
+        "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
+        "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"
+    )
+
     res.status(201).json(board)
   } catch (err) {
     res.status(400).json({ err: err })
@@ -156,6 +175,10 @@ exports.getUsersOnBoard = async (req, res) => {
       res[value.user].amount += value.amount
       return res
     }, {})
+
+    console.log("boardUsersboardUsers: ", boardUsers)
+
+    console.log("resultresult: ", result)
 
     res.status(201).json(result)
   } catch (err) {
