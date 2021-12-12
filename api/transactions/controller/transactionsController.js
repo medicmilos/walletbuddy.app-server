@@ -1,5 +1,5 @@
-const Transactions = require("../model/Transactions")
-const Boards = require("../../boards/model/Boards")
+const Transactions = require("../model/Transactions");
+const Boards = require("../../boards/model/Boards");
 
 exports.makeTransaction = async (req, res) => {
   try {
@@ -12,42 +12,42 @@ exports.makeTransaction = async (req, res) => {
       incomeToUser: req.body.incomeToUser,
       transType: req.body.transType,
       expenseType: req.body.expenseType,
-      incomeType: req.body.incomeType
-    })
-    const data = await trans.save()
+      incomeType: req.body.incomeType,
+    });
+    const data = await trans.save();
 
     if (req.body.transType == "Expense") {
       await Boards.updateOne(
         { _id: req.body.boardUID },
         { $inc: { ballance: -req.body.amount } }
-      )
+      );
     } else if (req.body.transType == "Income") {
       if (req.body.incomeType == "Single") {
         await Boards.updateOne(
           { _id: req.body.boardUID },
           { $inc: { ballance: req.body.amount } }
-        )
+        );
       } else if (req.body.incomeType == "Custom") {
       }
     }
 
-    res.status(201).json({ data })
+    res.status(201).json({ data });
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.getBoardTransactions = async (req, res) => {
   try {
     const transactions = await Transactions.find({
-      boardUID: req.query.boardUID
-    })
+      boardUID: req.query.boardUID,
+    });
 
-    res.status(201).json(transactions)
+    res.status(201).json(transactions);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.getUserBallance = async (req, res) => {
   try {
@@ -57,50 +57,50 @@ exports.getUserBallance = async (req, res) => {
           $or: [
             { fromUser: req.query.userEmail },
             { fromUsers: req.query.userEmail },
-            { "fromUsers.user": req.query.userEmail }
-          ]
+            { "fromUsers.user": req.query.userEmail },
+          ],
         },
-        { boardUID: req.query.boardUID }
-      ]
-    })
+        { boardUID: req.query.boardUID },
+      ],
+    });
 
-    let ballance = 0
+    let ballance = 0;
 
-    transactionsFrom.forEach(trans => {
+    transactionsFrom.forEach((trans) => {
       if (trans.transactionType == "Expense") {
         if (trans.expenseType == "Custom split") {
-          ballance -= trans.fromUsers.filter(item => {
-            return item.user == req.query.userEmail
-          })[0].amount
+          ballance -= trans.fromUsers.filter((item) => {
+            return item.user == req.query.userEmail;
+          })[0].amount;
         } else if (trans.expenseType == "Split all") {
-          ballance -= trans.amount / trans.fromUsers.length
+          ballance -= trans.amount / trans.fromUsers.length;
         } else if (trans.expenseType == "Single") {
-          ballance -= trans.amount
+          ballance -= trans.amount;
         }
       } else if (trans.transactionType == "Income") {
         if (trans.incomeType == "Custom") {
-          ballance -= trans.amount
+          ballance -= trans.amount;
         }
       }
-    })
+    });
 
     const transactionsTo = await Transactions.find({
       $and: [
         {
-          $or: [{ incomeToUser: req.query.userEmail }]
+          $or: [{ incomeToUser: req.query.userEmail }],
         },
-        { boardUID: req.query.boardUID }
-      ]
-    })
+        { boardUID: req.query.boardUID },
+      ],
+    });
 
-    transactionsTo.forEach(trans => {
+    transactionsTo.forEach((trans) => {
       if (trans.incomeType == "Single") {
-        ballance += trans.amount
+        ballance += trans.amount;
       }
-    })
+    });
 
-    res.status(201).json(ballance)
+    res.status(201).json(ballance);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};

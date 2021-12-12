@@ -20,8 +20,8 @@ exports.registerNewUser = async (req, res) => {
     await mailer.sendMail(
       req.body.email,
       "Welcome to WalletBuddy",
-      "<p style='font-weight:bold;font-size:18px;'>Hurray! You just joined WalletBuddy.</p>" +
-        "<br><br><br><br>" +
+      "<p style='font-weight:bold;font-size:16px;'>Welcome! You just joined WalletBuddy.</p>" +
+        "<br><br><br>" +
         "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as confirmation of your WalletBuddy account.</p>" +
         "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
         "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"

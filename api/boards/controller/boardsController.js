@@ -1,6 +1,7 @@
-const Boards = require("../model/Boards")
-const Transactions = require("../../transactions/model/Transactions")
-const mailer = require("../../mailer")
+const Boards = require("../model/Boards");
+const Transactions = require("../../transactions/model/Transactions");
+const mailer = require("../../mailer");
+const User = require("../../user/model/User");
 
 exports.createNewBoard = async (req, res) => {
   try {
@@ -8,187 +9,218 @@ exports.createNewBoard = async (req, res) => {
       title: req.body.title,
       ownerUID: req.body.ownerUID,
       ballance: req.body.ballance,
-      users: req.body.users
-    })
-    let data = await board.save()
+      users: req.body.users,
+    });
+    let data = await board.save();
 
-    res.status(201).json({ data })
+    res.status(201).json({ data });
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.getMyBoards = async (req, res) => {
   try {
-    const boards = await Boards.find({ ownerUID: req.query.boardUID })
+    const boards = await Boards.find({ ownerUID: req.query.boardUID });
 
-    res.status(201).json(boards)
+    res.status(201).json(boards);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.getSharedBoards = async (req, res) => {
   try {
-    let boards = await Boards.find({ users: req.query.email })
+    let boards = await Boards.find({ users: req.query.email });
 
-    boards.forEach(board => {
-      if (board.users.includes(req.query.email)) {
-        boards = []
+    const user = await User.find({ email: req.query.email });
+
+    boards.forEach((board, index) => {
+      if (
+        board.users.includes(req.query.email) &&
+        board.ownerUID == user[0]._id
+      ) {
+        boards.splice(index, 1);
       }
-    })
+    });
 
-    res.status(201).json(boards)
+    res.status(201).json(boards);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.getBoard = async (req, res) => {
   try {
-    const board = await Boards.find({ _id: req.query.boardUID })
+    const board = await Boards.find({ _id: req.query.boardUID });
 
-    res.status(201).json(board)
+    res.status(201).json(board);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.inviteUserToBoard = async (req, res) => {
   try {
-    const board = await Boards.updateOne(
+    await Boards.updateOne(
       { _id: req.body.boardUID },
       { $addToSet: { users: req.body.userEmail } }
-    )
+    );
+
+    const board = await Boards.find({ _id: req.body.boardUID });
 
     await mailer.sendMail(
       req.body.userEmail,
-      "WalletBuddy invitation",
-      "<p style='font-size:16px;'>Your have been invited to join the board '" +
+      "<p style='font-size:16px;'>Your have been added to the board '" +
         board[0].title +
-        "</p>" +
-        "<br><br>" +
-        "' is: " +
-        req.body.ballance +
-        +"<br><br>" +
-        "<p style='font-size:16px;'>Board message: " +
-        req.body.message +
-        "</p>" +
+        "'</p>" +
+        "<br>" +
+        "<p style='font-size:16px;'>If you don't nave an account, you can register via link: http://localhost:8080/auth/register </p>" +
+        "<br>" +
+        "<p style='font-size:16px;'>If you have an account, you can login to see the board." +
         "<br><br><br><br>" +
-        "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as reminder.</p>" +
+        "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as you have been added to the board.</p>" +
         "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
         "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"
-    )
+    );
 
-    res.status(201).json(board)
+    res.status(201).json(board);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.getUsersOnBoard = async (req, res) => {
   try {
-    const boardUsers = await Boards.find({ _id: req.query.boardUID })
+    const boardUsers = await Boards.find({ _id: req.query.boardUID });
 
     const transactions = await Transactions.find({
-      boardUID: req.query.boardUID
-    })
+      boardUID: req.query.boardUID,
+    });
 
-    let transactionsByUser = []
-    boardUsers[0].users.forEach(user => {
-      transactions.forEach(trans => {
+    let transactionsByUser = [];
+    boardUsers[0].users.forEach((user) => {
+      transactions.forEach((trans) => {
         if (trans.fromUser) {
           if (trans.fromUser == user) {
-            transactionsByUser.push({ user: user, transaction: trans })
+            transactionsByUser.push({ user: user, transaction: trans });
           }
         }
         if (trans.fromUsers) {
-          if (trans.fromUsers[0].user) {
-            let arrayOfUsers = trans.fromUsers.map(user => user.user)
+          if (trans.fromUsers.length > 0) {
+            if (trans.fromUsers[0].user) {
+              let arrayOfUsers = trans.fromUsers.map((user) => user.user);
 
-            if (arrayOfUsers.includes(user)) {
-              transactionsByUser.push({ user: user, transaction: trans })
-            }
-          } else {
-            if (trans.fromUsers.includes(user)) {
-              transactionsByUser.push({ user: user, transaction: trans })
+              if (arrayOfUsers.includes(user)) {
+                transactionsByUser.push({ user: user, transaction: trans });
+              }
+            } else {
+              if (trans.fromUsers.includes(user)) {
+                transactionsByUser.push({ user: user, transaction: trans });
+              }
             }
           }
         }
         if (trans.fromUser == null && trans.incomeToUser !== null) {
           if (trans.incomeToUser == user) {
-            transactionsByUser.push({ user: user, transaction: trans })
+            transactionsByUser.push({ user: user, transaction: trans });
           }
         }
-      })
-    })
+      });
+    });
 
-    let ballanceByUser = []
+    let ballanceByUser = [];
 
-    transactionsByUser.forEach(trans => {
+    transactionsByUser.forEach((trans) => {
       if (trans.transaction.transType == "Expense") {
         if (trans.transaction.expenseType == "Custom split") {
-          let amount = -trans.transaction.fromUsers.filter(item => {
-            return item.user == trans.user
-          })[0].amount
+          let amount = -trans.transaction.fromUsers.filter((item) => {
+            return item.user == trans.user;
+          })[0].amount;
 
-          ballanceByUser.push({ user: trans.user, amount: amount })
+          ballanceByUser.push({ user: trans.user, amount: amount });
         } else if (trans.transaction.expenseType == "Split all") {
           let amount =
-            -trans.transaction.amount / trans.transaction.fromUsers.length
+            -trans.transaction.amount / trans.transaction.fromUsers.length;
 
-          ballanceByUser.push({ user: trans.user, amount: amount })
+          ballanceByUser.push({ user: trans.user, amount: amount });
         } else if (trans.transaction.expenseType == "Single") {
-          let amount = -trans.transaction.amount
+          let amount = -trans.transaction.amount;
 
-          ballanceByUser.push({ user: trans.user, amount: amount })
+          ballanceByUser.push({ user: trans.user, amount: amount });
         }
       }
 
       if (trans.transaction.transType == "Income") {
         if (trans.transaction.incomeType == "Single") {
-          let amount = trans.transaction.amount
+          let amount = trans.transaction.amount;
 
           ballanceByUser.push({
             user: trans.transaction.incomeToUser,
-            amount: amount
-          })
+            amount: amount,
+          });
         } else if (trans.transaction.incomeType == "Custom") {
           ballanceByUser.push({
             user: trans.transaction.incomeToUser,
-            amount: trans.transaction.amount
-          })
+            amount: trans.transaction.amount,
+          });
           ballanceByUser.push({
             user: trans.transaction.fromUser,
-            amount: -trans.transaction.amount
-          })
+            amount: -trans.transaction.amount,
+          });
         }
       }
-    })
+    });
 
-    var result = []
+    let transUsers = [];
+    transactions.forEach((trans) => {
+      if (trans.incomeToUser) {
+        transUsers.push(trans.incomeToUser);
+      }
+      if (trans.fromUser) {
+        transUsers.push(trans.fromUser);
+      }
+      if (trans.fromUsers) {
+        if (trans.fromUsers.length > 0) {
+          if (trans.fromUsers[0].user) {
+            let arrayOfUsers = trans.fromUsers.map((user) => user.user);
+
+            transUsers.push(...arrayOfUsers);
+          } else {
+            transUsers.push(...trans.fromUsers);
+          }
+        }
+      }
+    });
+    transUsers = transUsers.filter((x, i, a) => a.indexOf(x) == i);
+
+    let usersDifference = boardUsers[0].users.filter(
+      (x) => !transUsers.includes(x)
+    );
+
+    var result = [];
     ballanceByUser.reduce(function (res, value) {
       if (!res[value.user]) {
-        res[value.user] = { user: value.user, amount: 0 }
-        result.push(res[value.user])
+        res[value.user] = { user: value.user, amount: 0 };
+        result.push(res[value.user]);
       }
-      res[value.user].amount += value.amount
-      return res
-    }, {})
+      res[value.user].amount += value.amount;
+      return res;
+    }, {});
 
-    console.log("boardUsersboardUsers: ", boardUsers)
+    usersDifference.forEach((user) => {
+      result.push({ user: user, amount: 0 });
+    });
 
-    console.log("resultresult: ", result)
-
-    res.status(201).json(result)
+    res.status(201).json(result);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
 
 exports.sendEmailReminder = async (req, res) => {
   try {
-    const board = await Boards.find({ _id: req.body.boardUID })
+    const board = await Boards.find({ _id: req.body.boardUID });
 
     await mailer.sendMail(
       req.body.userEmail,
@@ -197,8 +229,8 @@ exports.sendEmailReminder = async (req, res) => {
         board[0].title +
         "' is: " +
         req.body.ballance +
-        "</p>" +
-        "<br><br>" +
+        "RSD</p>" +
+        "<br>" +
         "<p style='font-size:16px;'>Board message: " +
         req.body.message +
         "</p>" +
@@ -206,10 +238,10 @@ exports.sendEmailReminder = async (req, res) => {
         "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as reminder.</p>" +
         "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
         "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"
-    )
+    );
 
-    res.status(201).json(true)
+    res.status(201).json(true);
   } catch (err) {
-    res.status(400).json({ err: err })
+    res.status(400).json({ err: err });
   }
-}
+};
