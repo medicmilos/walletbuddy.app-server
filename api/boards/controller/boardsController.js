@@ -71,16 +71,15 @@ exports.inviteUserToBoard = async (req, res) => {
 
     await mailer.sendMail(
       req.body.userEmail,
+      "Board invitation",
       "<p style='font-size:16px;'>Your have been added to the board '" +
         board[0].title +
-        "'</p>" +
-        "<br>" +
+        "'.</p>" +
         "<p style='font-size:16px;'>If you don't nave an account, you can register via link: http://localhost:8080/auth/register </p>" +
-        "<br>" +
         "<p style='font-size:16px;'>If you have an account, you can login to see the board." +
         "<br><br><br><br>" +
-        "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as you have been added to the board.</p>" +
-        "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
+        "<p style='font-size:12px;color:#ababab;text-align:center;margin-bottom: 0;font-weight: bold;'>You've received this email as you have been added to the board.</p>" +
+        "<p style='font-size:12px;color:#ababab;text-align:center;margin-top: 0;font-weight: bold;'>Please do not reply to this email.</p>" +
         "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"
     );
 
@@ -225,18 +224,17 @@ exports.sendEmailReminder = async (req, res) => {
     await mailer.sendMail(
       req.body.userEmail,
       "Board reminder",
-      "<p style='font-size:16px;'>Your ballance on board '" +
+      "<p style='font-size:14px;'>Your ballance on board '" +
         board[0].title +
         "' is: " +
         req.body.ballance +
         "RSD</p>" +
-        "<br>" +
-        "<p style='font-size:16px;'>Board message: " +
+        "<p style='font-size:14px;'>Board message: " +
         req.body.message +
         "</p>" +
-        "<br><br><br><br>" +
-        "<p style='font-size:12px;color:#ccc;text-align:center;margin-bottom: 0;'>You've received this email as reminder.</p>" +
-        "<p style='font-size:12px;color:#ccc;text-align:center;margin-top: 0;'>Please do not reply to this email.</p>" +
+        "<br><br><br>" +
+        "<p style='font-size:12px;color:#ababab;text-align:center;margin-bottom: 0;font-weight: bold;'>You've received this email as reminder.</p>" +
+        "<p style='font-size:12px;color:#ababab;text-align:center;margin-top: 0;font-weight: bold;'>Please do not reply to this email.</p>" +
         "<p style='font-size:14px;text-align:center;'>Copyright 2021 WalletBuddy</p>"
     );
 
