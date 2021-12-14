@@ -16,7 +16,11 @@ const boardsSchema = mongoose.Schema(
     users: {
       type: Array,
       required: [true]
-    }
+    },
+    boardCurrency: {
+      type: String,
+      required: [true]
+    },
   },
   {
     timestamps: true

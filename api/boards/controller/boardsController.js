@@ -10,6 +10,7 @@ exports.createNewBoard = async (req, res) => {
       ownerUID: req.body.ownerUID,
       ballance: req.body.ballance,
       users: req.body.users,
+      boardCurrency: req.body.boardCurrency,
     });
     let data = await board.save();
 
