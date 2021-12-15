@@ -76,7 +76,8 @@ exports.getUserBallance = async (req, res) => {
             return item.user == req.query.userEmail;
           })[0].amount;
         } else if (trans.expenseType == "Split all") {
-          ballance -= trans.amount / trans.fromUsers.length;
+          ballance -=
+            Math.round((trans.amount / trans.fromUsers.length) * 100) / 100;
         } else if (trans.expenseType == "Single") {
           ballance -= trans.amount;
         }

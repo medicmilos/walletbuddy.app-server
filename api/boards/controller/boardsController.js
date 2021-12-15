@@ -34,13 +34,15 @@ exports.getSharedBoards = async (req, res) => {
   try {
     let boards = await Boards.find({ users: req.query.email });
 
+    console.log("boards: ", boards);
+
     const user = await User.find({ email: req.query.email });
+    console.log("user: ", user);
 
     boards.forEach((board, index) => {
-      if (
-        board.users.includes(req.query.email) &&
-        board.ownerUID == user[0]._id
-      ) {
+      console.log("---: ", board.users);
+      if (board.ownerUID == user[0]._id) {
+        console.log("*", board.title);
         boards.splice(index, 1);
       }
     });
@@ -141,7 +143,10 @@ exports.getUsersOnBoard = async (req, res) => {
           ballanceByUser.push({ user: trans.user, amount: amount });
         } else if (trans.transaction.expenseType == "Split all") {
           let amount =
-            -trans.transaction.amount / trans.transaction.fromUsers.length;
+            Math.round(
+              (-trans.transaction.amount / trans.transaction.fromUsers.length) *
+                100
+            ) / 100;
 
           ballanceByUser.push({ user: trans.user, amount: amount });
         } else if (trans.transaction.expenseType == "Single") {
