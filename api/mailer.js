@@ -1,22 +1,22 @@
-var nodemailer = require("nodemailer")
+var nodemailer = require("nodemailer");
 
 exports.sendMail = async (to, subject, html) => {
   const transporter = nodemailer.createTransport({
     port: 465,
     host: "smtp.gmail.com",
     auth: {
-      user: "appwalletbuddy@gmail.com",
-      pass: "^4L*hZtA8j!RAx"
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
     },
-    secure: true
-  })
+    secure: true,
+  });
 
   const mailData = {
     from: "appwalletbuddy@gmail.com",
     to,
     subject,
-    html
-  }
+    html,
+  };
 
-  await transporter.sendMail(mailData)
-}
+  await transporter.sendMail(mailData);
+};
