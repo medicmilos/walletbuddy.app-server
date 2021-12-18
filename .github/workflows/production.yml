@@ -39,4 +39,4 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: milosmedic/waletbuddy.app-server:latest
+          tags: milosmedic/walletbuddy.app-server:latest
