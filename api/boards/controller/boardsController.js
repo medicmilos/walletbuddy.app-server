@@ -32,22 +32,13 @@ exports.getMyBoards = async (req, res) => {
 
 exports.getSharedBoards = async (req, res) => {
   try {
-    let boards = await Boards.find({ users: req.query.email });
+    let boards = await Boards.find({ ownerUID: { $ne: req.query.userUID } });
 
-    console.log("boards: ", boards);
-
-    const user = await User.find({ email: req.query.email });
-    console.log("user: ", user);
-
-    boards.forEach((board, index) => {
-      console.log("---: ", board.users);
-      if (board.ownerUID == user[0]._id) {
-        console.log("*", board.title);
-        boards.splice(index, 1);
-      }
+    const result = boards.filter((board) => {
+      return board.users.includes(req.query.email);
     });
 
-    res.status(201).json(boards);
+    res.status(201).json(result);
   } catch (err) {
     res.status(400).json({ err: err });
   }
@@ -245,6 +236,75 @@ exports.sendEmailReminder = async (req, res) => {
     );
 
     res.status(201).json(true);
+  } catch (err) {
+    res.status(400).json({ err: err });
+  }
+};
+
+exports.analyticsTotalSum = async (req, res) => {
+  try {
+    let boards = await Boards.find({ users: req.query.email });
+
+    let usersBoards = [];
+    await Promise.all(
+      boards.map(async (board) => {
+        const transactionsFrom = await Transactions.find({
+          $and: [
+            {
+              $or: [
+                { fromUser: req.query.userEmail },
+                { fromUsers: req.query.userEmail },
+                { "fromUsers.user": req.query.userEmail },
+              ],
+            },
+            { boardUID: board._id },
+          ],
+        });
+
+        let ballance = 0;
+
+        transactionsFrom.forEach((trans) => {
+          if (trans.transType == "Expense") {
+            if (trans.expenseType == "Custom split") {
+              ballance -= trans.fromUsers.filter((item) => {
+                return item.user == req.query.userEmail;
+              })[0].amount;
+            } else if (trans.expenseType == "Split all") {
+              ballance -=
+                Math.round((trans.amount / trans.fromUsers.length) * 100) / 100;
+            } else if (trans.expenseType == "Single") {
+              ballance -= trans.amount;
+            }
+          } else if (trans.transType == "Income") {
+            if (trans.incomeType == "Custom") {
+              ballance -= trans.amount;
+            }
+          }
+        });
+
+        const transactionsTo = await Transactions.find({
+          incomeToUser: req.query.userEmail,
+        });
+
+        transactionsTo.forEach((trans) => {
+          if (trans.transType == "Income") {
+            if (trans.incomeType == "Single") {
+              ballance += trans.amount;
+            } else if (trans.incomeType == "Custom") {
+              ballance += trans.amount;
+            }
+          }
+        });
+        usersBoards.push({
+          boardTitle: board.title,
+          _id: board._id,
+          currency: board.boardCurrency,
+          ballance: ballance,
+        });
+      })
+    );
+
+    res.status(201).json(usersBoards);
   } catch (err) {
     res.status(400).json({ err: err });
   }

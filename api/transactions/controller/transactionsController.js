@@ -66,12 +66,9 @@ exports.getUserBallance = async (req, res) => {
 
     let ballance = 0;
 
-    console.log("transactionsFrom: ", transactionsFrom);
-
     transactionsFrom.forEach((trans) => {
       if (trans.transType == "Expense") {
         if (trans.expenseType == "Custom split") {
-          console.log("--------: ", trans.fromUsers);
           ballance -= trans.fromUsers.filter((item) => {
             return item.user == req.query.userEmail;
           })[0].amount;
@@ -87,8 +84,6 @@ exports.getUserBallance = async (req, res) => {
         }
       }
     });
-
-    console.log("from: ", ballance);
 
     const transactionsTo = await Transactions.find({
       $and: [
@@ -106,8 +101,6 @@ exports.getUserBallance = async (req, res) => {
         ballance += trans.amount;
       }
     });
-
-    console.log("to: ", ballance);
 
     res.status(201).json(ballance);
   } catch (err) {
